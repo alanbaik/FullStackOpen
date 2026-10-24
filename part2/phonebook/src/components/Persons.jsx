@@ -1,9 +1,10 @@
-const Persons = ({ filter, persons, filterPerson }) => {
-  if (filter.length === 0 ) {
-    return persons.map(p => <div key={p.name}>{p.name} {p.number}</div>)
-  } else {
-    return filterPerson.map(p => <div key={p.name}>{p.name} {p.number}</div>)
-  }
-}
+const Persons = ({ filterPerson, erasePerson }) => {
+	return filterPerson.map((p) => (
+		<div key={p.id}>
+			{p.name} {p.number}
+			<button onClick={() => erasePerson(p.id, p.name)}>delete</button>
+		</div>
+	));
+};
 
-export default Persons
+export default Persons;
