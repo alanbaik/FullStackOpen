@@ -39,12 +39,16 @@ const App = () => {
 						}, 5000);
 					})
 					.catch((err) => {
-						setNotifMessage(`Info of '${newName}' has already been removed from server`);
+						if (err.response?.status === 404) {
+							setNotifMessage(`Info of '${newName}' has already been removed from server`);
+							setPersons(persons.filter((p) => p.id !== existing.id));
+						} else {
+							setNotifMessage(err.response?.data?.error ?? "Unable to update the person");
+						}
 						setNotifType(false);
 						setTimeout(() => {
 							setNotifMessage(null);
 						}, 5000);
-                        setPersons(persons.filter((n) => n.id !== existing.id));
 					});
 			}
 		} else {
@@ -60,7 +64,7 @@ const App = () => {
 					}, 5000);
 				})
 				.catch((err) => {
-					setNotifMessage(`Unable to create Person '${newName}' in server`);
+					setNotifMessage(err.response?.data?.error ?? "Unable to reach the server");
 					setNotifType(false);
 					setTimeout(() => {
 						setNotifMessage(null);
