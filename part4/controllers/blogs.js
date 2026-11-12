@@ -1,24 +1,39 @@
 const blogRouter = require("express").Router();
 const Blog = require("../models/blog");
+const middleware = require("../utils/middleware");
 
-blogRouter.get("/", (request, response) => {
-	Blog.find({}).then((blogs) => {
-		response.json(blogs);
+blogRouter.get("/", async (request, response) => {
+	const blogs = await Blog.find({}).populate("user", { username: 1, name: 1 });
+	response.json(blogs);
+});
+
+blogRouter.post("/", middleware.userExtractor, async (request, response) => {
+	const body = request.body;
+	const user = request.user;
+
+	const blog = new Blog({
+		...body,
+		user: user.id,
 	});
+
+	const savedBlog = await blog.save();
+	user.blogs = user.blogs.concat(savedBlog._id);
+	await user.save();
+
+	response.status(201).json(savedBlog);
 });
 
-blogRouter.post("/", (request, response, next) => {
-	const blog = new Blog(request.body);
+blogRouter.delete("/:id", middleware.userExtractor, async (request, response) => {
+	const blog = await Blog.findById(request.params.id);
+	if (!blog) {
+		return response.status(404).end();
+	}
 
-	blog.save()
-		.then((result) => {
-			response.status(201).json(result);
-		})
-		.catch((error) => next(error));
-});
+	if (blog.user?.toString() !== request.user.id) {
+		return response.status(403).json({ error: "only the creator can delete a blog" });
+	}
 
-blogRouter.delete("/:id", async (request, response) => {
-	await Blog.findByIdAndDelete(request.params.id);
+	await blog.deleteOne();
 	response.status(204).end();
 });
 
